@@ -1,14 +1,14 @@
 package api.model;
 
-public class CredentialsDto {
+public class CredentialDto {
 
   private String email;
   private String password;
 
-  public CredentialsDto() {
+  public CredentialDto() {
   }
 
-  public CredentialsDto(String email, String password) {
+  public CredentialDto(String email, String password) {
     this.email = email;
     this.password = password;
   }

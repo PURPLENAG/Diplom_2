@@ -1,16 +1,12 @@
 package api.client;
 
-import static io.restassured.RestAssured.given;
-
 import config.StellarApiConfig;
 import io.restassured.response.Response;
 
-public abstract class IngredientClient {
+public abstract class IngredientClient extends BaseStellarClient {
 
   public static Response getAll() {
-    return given()
-        .baseUri(StellarApiConfig.BASE_URL)
-        .get("api/ingredients");
+    return spec().get(StellarApiConfig.INGREDIENTS_PATH);
   }
 
 }

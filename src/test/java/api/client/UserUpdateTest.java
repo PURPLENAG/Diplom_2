@@ -13,11 +13,16 @@ import io.qameta.allure.Step;
 import io.qameta.allure.junit4.DisplayName;
 import java.util.Arrays;
 import java.util.Optional;
+
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import util.Ryuk;
 
 @SuppressWarnings("DuplicateStringLiteralInspection")
 public class UserUpdateTest {
+
+  private final Ryuk ryuk = new Ryuk();
 
   private UserDto user;
   private String accessToken;
@@ -34,12 +39,12 @@ public class UserUpdateTest {
   public void beforeEach() {
     user = generateUserDto();
 
-    UserClient.register(user)
+    AuthClient.register(ryuk.remember(user))
         .then().assertThat()
         .statusCode(200)
         .body("success", equalTo(true));
 
-    accessToken = UserClient.login(user.getEmail(), user.getPassword())
+    accessToken = AuthClient.login(user.getEmail(), user.getPassword())
         .then().assertThat()
         .statusCode(200)
         .body("success", equalTo(true))
@@ -47,10 +52,15 @@ public class UserUpdateTest {
         .extract().body().jsonPath().getString("accessToken");
   }
 
+  @After
+  public void afterEach() {
+    ryuk.wakeUp();
+  }
+
   @Step("Проверка пользователя")
   private void checkUser(String accessToken, UserDto user, UserDto patch,
       ExpectedResponse expectedResponse) {
-    var response = UserClient.getUser(accessToken).then();
+    var response = AuthClient.getUser(accessToken).then();
 
     if (expectedResponse == ExpectedResponse.OK) {
       response.assertThat()
@@ -80,7 +90,7 @@ public class UserUpdateTest {
   @Step("Изменение пользователя")
   private void patchUser(String accessToken, UserDto user, UserDto patch,
       ExpectedResponse expectedResponse) {
-    var response = UserClient.patchUser(accessToken, patch).then();
+    var response = AuthClient.patchUser(accessToken, patch).then();
 
     if (expectedResponse == ExpectedResponse.OK) {
       response.assertThat()
@@ -116,7 +126,7 @@ public class UserUpdateTest {
 
   @Step("Логин с верными учётными данными")
   private void loginByExisting(String email, String password) {
-    UserClient.login(email, password)
+    AuthClient.login(email, password)
         .then().assertThat()
         .statusCode(200)
         .body("success", equalTo(true))
@@ -128,7 +138,7 @@ public class UserUpdateTest {
 
   @Step("Логин с неверными учётными данными")
   private void loginByNotExisting(String email, String password) {
-    UserClient.login(email, password)
+    AuthClient.login(email, password)
         .then().assertThat()
         .statusCode(401)
         .body("success", equalTo(false))
@@ -182,6 +192,7 @@ public class UserUpdateTest {
   public void shouldUpdateEmailForAuthorizedUser() {
     checkUser(accessToken, user, null, ExpectedResponse.OK);
     var patch = generatePatch(UserField.EMAIL);
+    ryuk.remember(patch.getEmail(), user.getPassword());
     patchUser(accessToken, user, patch, ExpectedResponse.OK);
     checkUser(accessToken, user, patch, ExpectedResponse.OK);
   }
@@ -190,7 +201,7 @@ public class UserUpdateTest {
   @DisplayName("Обновление E-mail текущего пользователя на уже занятый адрес почты")
   public void shouldFailOnUpdateEmailByAlreadyUsed() {
     var anotherUser = generateUserDto();
-    UserClient.register(anotherUser)
+    AuthClient.register(ryuk.remember(anotherUser))
         .then().assertThat()
         .statusCode(200)
         .body("success", equalTo(true));
@@ -198,6 +209,7 @@ public class UserUpdateTest {
     checkUser(accessToken, user, null, ExpectedResponse.OK);
     var patch = new UserDto();
     patch.setEmail(anotherUser.getEmail());
+    ryuk.remember(patch.getEmail(), user.getPassword());
     patchUser(accessToken, user, patch, ExpectedResponse.EMAIL_ALREADY_USED);
     checkUser(accessToken, user, null, ExpectedResponse.OK);
   }
@@ -207,6 +219,7 @@ public class UserUpdateTest {
   public void shouldFailOnUpdateEmailWithoutAuthorization() {
     checkUser(accessToken, user, null, ExpectedResponse.OK);
     var patch = generatePatch(UserField.EMAIL);
+    ryuk.remember(patch.getEmail(), user.getPassword());
     patchUser(null, user, patch, ExpectedResponse.UNAUTHORIZED);
     checkUser(accessToken, user, null, ExpectedResponse.OK);
   }
@@ -216,6 +229,7 @@ public class UserUpdateTest {
   public void shouldUpdatePasswordForAuthorizedUser() {
     checkUser(accessToken, user, null, ExpectedResponse.OK);
     var patch = generatePatch(UserField.PASSWORD);
+    ryuk.remember(user.getEmail(), patch.getPassword());
     patchUser(accessToken, user, patch, ExpectedResponse.OK);
     checkUser(accessToken, user, patch, ExpectedResponse.OK);
     loginByExisting(user.getEmail(), patch.getPassword());
@@ -227,6 +241,7 @@ public class UserUpdateTest {
   public void shouldFailOnUpdatePasswordWithoutAuthorization() {
     checkUser(accessToken, user, null, ExpectedResponse.OK);
     var patch = generatePatch(UserField.PASSWORD);
+    ryuk.remember(user.getEmail(), patch.getPassword());
     patchUser(null, user, patch, ExpectedResponse.UNAUTHORIZED);
     checkUser(accessToken, user, null, ExpectedResponse.OK);
     loginByExisting(user.getEmail(), user.getPassword());

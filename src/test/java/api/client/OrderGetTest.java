@@ -13,12 +13,17 @@ import api.model.OrderDto;
 import api.model.UserDto;
 import io.qameta.allure.junit4.DisplayName;
 import java.util.List;
+
+import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import util.Ryuk;
 
 @SuppressWarnings("DuplicateStringLiteralInspection")
 public class OrderGetTest {
+
+  private final Ryuk ryuk = new Ryuk();
 
   private static final int MIN_INGREDIENTS_COUNT = 3;
   private static final String INVALID_INGREDIENT_ID = "65c1c5a77d1a82001bdaba9b";
@@ -60,12 +65,12 @@ public class OrderGetTest {
   public void beforeEach() {
     user = generateUserDto();
 
-    UserClient.register(user)
+    AuthClient.register(ryuk.remember(user))
         .then().assertThat()
         .statusCode(200)
         .body("success", equalTo(true));
 
-    accessToken = UserClient.login(user.getEmail(), user.getPassword())
+    accessToken = AuthClient.login(user.getEmail(), user.getPassword())
         .then().assertThat()
         .statusCode(200)
         .body("success", equalTo(true))
@@ -84,6 +89,11 @@ public class OrderGetTest {
         .then().assertThat()
         .statusCode(200)
         .body("success", equalTo(true));
+  }
+
+  @After
+  public void afterEach() {
+    ryuk.wakeUp();
   }
 
   @Test

@@ -6,22 +6,31 @@ import static org.hamcrest.Matchers.nullValue;
 import static util.DataGenerator.generateUserDto;
 
 import io.qameta.allure.junit4.DisplayName;
+import org.junit.After;
 import org.junit.Test;
+import util.Ryuk;
 
 @SuppressWarnings("DuplicateStringLiteralInspection")
 public class UserLoginTest {
+
+  private final Ryuk ryuk = new Ryuk();
+
+  @After
+  public void afterEach() {
+    ryuk.wakeUp();
+  }
 
   @Test
   @DisplayName("Успешный логин существующим пользователем")
   public void shouldLoginByExistingUser() {
     var user = generateUserDto();
 
-    UserClient.register(user)
+    AuthClient.register(ryuk.remember(user))
         .then().assertThat()
         .statusCode(200)
         .body("success", equalTo(true));
 
-    UserClient.login(user.getEmail(), user.getPassword())
+    AuthClient.login(user.getEmail(), user.getPassword())
         .then().assertThat()
         .statusCode(200)
         .body("success", equalTo(true))
@@ -37,12 +46,12 @@ public class UserLoginTest {
   public void shouldFailOnLoginWithIncorrectPassword() {
     var user = generateUserDto();
 
-    UserClient.register(user)
+    AuthClient.register(ryuk.remember(user))
         .then().assertThat()
         .statusCode(200)
         .body("success", equalTo(true));
 
-    UserClient.login(user.getEmail(), "incorrect")
+    AuthClient.login(user.getEmail(), "incorrect")
         .then().assertThat()
         .statusCode(401)
         .body("success", equalTo(false))
@@ -58,7 +67,7 @@ public class UserLoginTest {
   public void shouldFailOnLoginByNotExistingUser() {
     var user = generateUserDto();
 
-    UserClient.login(user.getEmail(), user.getPassword())
+    AuthClient.login(user.getEmail(), user.getPassword())
         .then().assertThat()
         .statusCode(401)
         .body("success", equalTo(false))

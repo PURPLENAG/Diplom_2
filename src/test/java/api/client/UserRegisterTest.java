@@ -6,17 +6,26 @@ import static org.hamcrest.Matchers.nullValue;
 import static util.DataGenerator.generateUserDto;
 
 import io.qameta.allure.junit4.DisplayName;
+import org.junit.After;
 import org.junit.Test;
+import util.Ryuk;
 
 @SuppressWarnings("DuplicateStringLiteralInspection")
 public class UserRegisterTest {
+
+  private final Ryuk ryuk = new Ryuk();
+
+  @After
+  public void afterEach() {
+    ryuk.wakeUp();
+  }
 
   @Test
   @DisplayName("Успешная регистрация нового пользователя")
   public void shouldRegisterUniqueUser() {
     var user = generateUserDto();
 
-    UserClient.register(user)
+    AuthClient.register(ryuk.remember(user))
         .then().assertThat()
         .statusCode(200)
         .body("success", equalTo(true))
@@ -32,12 +41,12 @@ public class UserRegisterTest {
   public void shouldFailOnRegisteringExistingUser() {
     var user = generateUserDto();
 
-    UserClient.register(user)
+    AuthClient.register(ryuk.remember(user))
         .then().assertThat()
         .statusCode(200)
         .body("success", equalTo(true));
 
-    UserClient.register(user)
+    AuthClient.register(ryuk.remember(user))
         .then().assertThat()
         .statusCode(403)
         .body("success", equalTo(false))
@@ -54,7 +63,7 @@ public class UserRegisterTest {
     var user = generateUserDto();
     user.setEmail(null);
 
-    UserClient.register(user)
+    AuthClient.register(ryuk.remember(user))
         .then().assertThat()
         .statusCode(403)
         .body("success", equalTo(false))
@@ -71,7 +80,7 @@ public class UserRegisterTest {
     var user = generateUserDto();
     user.setName(null);
 
-    UserClient.register(user)
+    AuthClient.register(ryuk.remember(user))
         .then().assertThat()
         .statusCode(403)
         .body("success", equalTo(false))
@@ -88,7 +97,7 @@ public class UserRegisterTest {
     var user = generateUserDto();
     user.setPassword(null);
 
-    UserClient.register(user)
+    AuthClient.register(ryuk.remember(user))
         .then().assertThat()
         .statusCode(403)
         .body("success", equalTo(false))
