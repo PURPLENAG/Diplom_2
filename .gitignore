@@ -1,0 +1,7 @@
+.idea
+.allure
+*.class
+*.lst
+*.jar
+/target
+/build
